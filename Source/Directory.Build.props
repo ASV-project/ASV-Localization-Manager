@@ -1,0 +1,35 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<AvaloniaVersion>11.3.4</AvaloniaVersion>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+		<RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+		<ErrorReport>none</ErrorReport>
+		<UseArtifactsOutput>true</UseArtifactsOutput>
+		<ArtifactsPath>../../Artifacts</ArtifactsPath>
+		<Configurations>Debug;Release</Configurations>
+		<RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+		<Platforms>AnyCPU;x86;x64</Platforms>
+		<PlatformTarget>x64</PlatformTarget>
+	</PropertyGroup>
+	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform(&apos;Windows&apos;))">
+		<DefineConstants>$(DefineConstants);OS_WINDOWS</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform(&apos;Linux&apos;))">
+		<DefineConstants>$(DefineConstants);OS_LINUX</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform(&apos;OSX&apos;))">
+		<DefineConstants>$(DefineConstants);OS_MAC</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">
+		<Deterministic>False</Deterministic>
+	</PropertyGroup>
+	<PropertyGroup Label="Avalonia">
+		<AvaloniaNameGeneratorDefaultFieldModifier>Public</AvaloniaNameGeneratorDefaultFieldModifier>
+		<PlatformTarget>x64</PlatformTarget>
+	</PropertyGroup>
+</Project>

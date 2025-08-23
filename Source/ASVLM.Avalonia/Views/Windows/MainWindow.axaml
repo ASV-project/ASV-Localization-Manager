@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:models="using:ASVLM.Avalonia.Models"
+		xmlns:managers="using:ASVLM.Avalonia.Managers"
+		xmlns:mvvm_converters="using:ASVLM.CommonAvalonia.MVVM.Converters"
+		xmlns:viewmodels_windows="using:ASVLM.Avalonia.ViewModels.Windows"
+		xmlns:views_controls_main_window="using:ASVLM.Avalonia.Views.Controls.MainWindow"
+		xmlns:localization="using:ASVLM.CommonAvalonia.Assets.Resources.Localization"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="750"
+        x:Class="ASVLM.Avalonia.Views.Windows.MainWindow"
+		x:DataType="viewmodels_windows:ViewModelMainWindow"
+		Width="450" Height="750"
+		CanMaximize="False" CanResize="False"
+        Title="ASV Localisation Manager" Icon="avares://ASVLM.CommonAvalonia/Assets/Images/Icons/icon_wh40k.ico">
+	<Window.Background>
+        <ImageBrush Source="avares://ASVLM.CommonAvalonia/Assets/Images/background.png" Stretch="UniformToFill"/>
+    </Window.Background>
+	<Window.Resources>
+		<mvvm_converters:ConverterStringLocalizedString x:Key="converter_string_localized_string"/>
+	</Window.Resources>
+	
+	<Design.DataContext>
+		<viewmodels_windows:ViewModelMainWindow/>
+	</Design.DataContext>
+	
+	<Grid RowDefinitions="150,50,420,*">
+    	<TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+					Text="{Binding Select_Localization_Text, Converter={StaticResource converter_string_localized_string}}" TextAlignment="Center" TextWrapping="Wrap" Foreground="LightGray" FontFamily="Impact" FontSize="48"/>
+		
+		<Grid Grid.Row="2" RowDefinitions="Auto,Auto,50,Auto,Auto">
+			<Grid.Resources>
+				<DataTemplate x:Key="LanguageItemTemplate">
+    			    <StackPanel Orientation="Horizontal" Spacing="4">
+    			        <TextBlock x:DataType="models:Localization+Language" VerticalAlignment="Center"
+									 Text="{Binding Icon}" FontSize="36"/>
+    			        <TextBlock x:DataType="models:Localization+Language" VerticalAlignment="Center"  
+    			                    Text="{Binding Name, Converter={StaticResource converter_string_localized_string}}" FontSize="36"/>
+    			    </StackPanel>
+    			</DataTemplate>
+			</Grid.Resources>
+			<Grid.Styles>
+				<Style Selector="ComboBox.LanguageSelector">
+        			<Setter Property="ItemsSource" Value="{Binding Localization.Languages}" />
+        			<Setter Property="ItemTemplate" Value="{StaticResource LanguageItemTemplate}" />
+    			</Style>
+			</Grid.Styles>
+			
+			
+			<StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15">
+				<TextBlock VerticalAlignment="Center"
+						Text="{Binding Select_Text_Language_Text, Converter={StaticResource converter_string_localized_string}}" FontSize="40" FontWeight="Bold"/>
+				<TextBlock VerticalAlignment="Center"
+							Text="{Binding App_Language_Text, Converter={StaticResource converter_string_localized_string}}" TextAlignment="Center" FontSize="22"/>
+			</StackPanel>
+			<ComboBox Grid.Row="1" Classes="LanguageSelector" SelectedItem="{Binding Localization.Language_Text_Current}"/>
+			<TextBlock Grid.Row="3" VerticalAlignment="Center"
+						Text="{Binding Select_Voiceover_Language_Text, Converter={StaticResource converter_string_localized_string}}" FontSize="40" FontWeight="Bold"/>
+			<ComboBox Grid.Row="4" Classes="LanguageSelector" SelectedItem="{Binding Localization.Language_Sound_Current}"/>
+		</Grid>
+
+	   	<TextBlock Grid.Row="3" HorizontalAlignment="Center"
+		 			Text="{Binding Message}" TextAlignment="Center" TextWrapping="Wrap" Foreground="Red" FontFamily="Impact" FontSize="22" TextDecorations="Underline"/>
+	</Grid>
+</Window>

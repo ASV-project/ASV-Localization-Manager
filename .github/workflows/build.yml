@@ -18,6 +18,9 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    env:
+      LINUX_ARCH: 
+        ${{ github.event.inputs.linux_arch || 'linux-x64' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -28,30 +31,33 @@ jobs:
         run: chmod +x Scripts/build.sh
 
       - name: Build for Linux
-        run: ./Scripts/build.sh ${{ github.event.inputs.linux_arch }}
+        run: cd Scripts && ./build.sh ${{ env.LINUX_ARCH }}
 
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: ./Artifacts/**
+          path: Artifacts/**
 
   build-windows:
     runs-on: windows-latest
+    env:
+      WINDOWS_ARCH:
+        ${{ github.event.inputs.windows_arch || 'win-x64' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Make Build Script Executable (WSL)
+      - name: Make Build Script Executable (WSL)		#BUG Fails for some reason
         run: wsl chmod +x Scripts/build.sh
 
       - name: Build for Windows (WSL)
-        run: wsl ./Scripts/build.sh ${{ github.event.inputs.windows_arch }}
+        run: wsl cd Scripts && ./build.sh ${{ env.WINDOWS_ARCH }}
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
-          path: ./Artifacts/**
+          path: Artifacts/**

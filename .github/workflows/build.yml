@@ -18,40 +18,125 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    outputs:
+      artifact_path: ${{ steps.set-outputs.outputs.artifact_path }}
+      arch: ${{ steps.set-outputs.outputs.arch }}
+    env:
+      ARCH: 
+        ${{ github.event.inputs.linux_arch || 'linux-x64' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Make Build Script Executable
-        run: chmod +x Scripts/build.sh
+      - name: Run Build Script
+        run: |
+          chmod +x Scripts/build.sh
+          cd Scripts && ./build.sh ${{ env.ARCH }}
 
-      - name: Build for Linux
-        run: ./Scripts/build.sh ${{ github.event.inputs.linux_arch }}
+      - name: Rename Output Folder
+        run: |
+          mkdir -p dist/ASVLM-${{ env.ARCH }}
+          cp -r ASVLM.Desktop/release_${{ env.ARCH }}/* dist/ASVLM-${{ env.ARCH }}/
+
+      - name: Archive for Upload
+        run: zip -r ASVLM-${{ env.ARCH }}.zip dist/ASVLM-${{ env.ARCH }}
 
       - name: Upload Linux Artifacts
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: ./Artifacts/**
+          path: ASVLM-${{ env.ARCH }}.zip
+		  
+      - name: Set Output Path
+        id: set-outputs
+        run: |
+          echo "artifact_path=$(pwd)/ASVLM-${{ env.ARCH }}.zip" >> $GITHUB_OUTPUT
+          echo "arch=${{ env.ARCH }}" >> $GITHUB_OUTPUT
 
   build-windows:
     runs-on: windows-latest
+    outputs:
+      artifact_path: ${{ steps.set-outputs.outputs.artifact_path }}
+      arch: ${{ steps.set-outputs.outputs.arch }}
+    env:
+      ARCH: ${{ github.event.inputs.windows_arch || 'win-x64' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Make Build Script Executable (WSL)
-        run: wsl chmod +x Scripts/build.sh
+      - name: Copy & Make Executable in WSL
+        run: |
+          wsl mkdir -p /tmp/scripts
+          wsl cp "/mnt/c/${{ github.workspace }}/Scripts/build.sh" /tmp/scripts/build.sh
+          wsl chmod +x /tmp/scripts/build.sh
 
-      - name: Build for Windows (WSL)
-        run: wsl ./Scripts/build.sh ${{ github.event.inputs.windows_arch }}
+      - name: Build Project via WSL
+        run: wsl /tmp/scripts/build.sh "${{ env.ARCH }}"
 
-      - name: Upload Windows Artifacts
+      - name: Rename Output Folder
+        run: |
+          mkdir -p dist/ASVLM-${{ env.ARCH }}
+          robocopy "ASVLM.Desktop\release_${{ env.ARCH }}" "dist/ASVLM-${{ env.ARCH }}" /E /NFL /NDL /NJH /NJS /NP
+          # Fallback if robocopy fails
+          New-Item -ItemType Directory -Path dist -ErrorAction Ignore
+
+      - name: Archive for Upload
+        run: |
+          Compress-Archive -Path "dist/ASVLM-${{ env.ARCH }}/*" -DestinationPath "ASVLM-${{ env.ARCH }}.zip" -Force
+
+      - name: Upload Artifact (Manual Run)
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-artifacts
-          path: ./Artifacts/**
+          name: windows-artifact
+          path: ASVLM-${{ env.ARCH }}.zip
+
+      - name: Set Output Path and Arch
+        id: set-outputs
+        run: |
+          echo "artifact_path=$(Get-Location)/ASVLM-${{ env.ARCH }}.zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "arch=${{ env.ARCH }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  create-release:
+    needs: [build-linux, build-windows]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Get Tag Name
+        id: get-tag
+        run: |
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+  
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get-tag.outputs.tag }}
+          release_name: Release ${{ steps.get-tag.outputs.tag }}
+          draft: false
+          prerelease: false
+  
+      - name: Upload Linux Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.build-linux.outputs.artifact_path }}
+          asset_name: ASVLM-${{ needs.build-linux.outputs.arch }}-linux.zip
+          asset_content_type: application/zip
+  
+      - name: Upload Windows Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.build-windows.outputs.artifact_path }}
+          asset_name: ASVLM-${{ needs.build-windows.outputs.arch }}-win.zip
+          asset_content_type: application/zip

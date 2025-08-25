@@ -1,13 +1,16 @@
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ASV-project/ASV-Localization-Manager/build.yml)
+
 # Art Stream Vision's Localisation Manager
 ## Description
 A cross-platform app to change text and voice-over language of Men Of War Assault Squad 2 mods.
 
 ## Usage
-App accepts the following command line arguments:
+### Arguments
 - [`--mod_directory <path>`] - path to the mod folder.
 - [`-h`, `--help`, `-help`] - show help (console).
 
-Example: `asvlm.exe --mod_directory ../../../../mods/MyMod`
+### Example
+`asvlm.exe --mod_directory ../../../../mods/MyMod`
 
 ## Project
 ### Tech
